@@ -1,0 +1,86 @@
+services:
+  # 1. Laravel Web Service
+  - type: web
+    name: miro-clone-web
+    env: php
+    plan: free
+    region: singapore
+    buildCommand: "composer install --no-dev --optimize-autoloader && npm install && npm run build && php artisan migrate --force"
+    startCommand: "apache2-foreground" # Render PHP environment automatically uses Apache pointing to /public
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_APP_ID
+        value: 149166
+      - key: REVERB_APP_KEY
+        value: rqstow4sbplqshtxxkak
+      - key: REVERB_APP_SECRET
+        value: 9hon33i81fj34x4zawz4
+      - key: REVERB_HOST
+        value: miro-clone-reverb.onrender.com
+      - key: REVERB_PORT
+        value: 443
+      - key: REVERB_SCHEME
+        value: https
+      - key: VITE_REVERB_APP_KEY
+        value: rqstow4sbplqshtxxkak
+      - key: VITE_REVERB_HOST
+        value: miro-clone-reverb.onrender.com
+      - key: VITE_REVERB_PORT
+        value: 443
+      - key: VITE_REVERB_SCHEME
+        value: https
+
+  # 2. WebSocket Server (Laravel Reverb)
+  - type: web
+    name: miro-clone-reverb
+    env: php
+    plan: free
+    region: singapore
+    buildCommand: "composer install --no-dev --optimize-autoloader"
+    startCommand: "php artisan reverb:start --host=0.0.0.0 --port=$PORT"
+    envVars:
+      - key: APP_ENV
+        value: production
+
+  # 3. Queue Worker (Xử lý Jobs nếu có)
+  - type: worker
+    name: miro-clone-queue
+    env: php
+    plan: free
+    region: singapore
+    buildCommand: "composer install --no-dev --optimize-autoloader"
+    startCommand: "php artisan queue:work --daemon"
+    envVars:
+      - key: APP_ENV
+        value: production
+
+  # 4. Yjs WebSocket Server (Node.js) cho Realtime Canvas/Cursor
+  - type: web
+    name: miro-clone-yjs
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: "npm install"
+    startCommand: "node ./node_modules/y-websocket/bin/server.cjs"
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
